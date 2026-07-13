@@ -87,8 +87,6 @@
     <label>Name</label>
     <input type="text" id="student" placeholder="Student name" autocomplete="off">
     <div class="row" style="margin-top:10px;">
-      <div><label>Written marks (Part 2, /11)</label>
-        <input type="text" id="written" inputmode="numeric" placeholder="0"></div>
       <div><label>Class</label>
         <input type="text" id="klass" placeholder="7A"></div>
     </div>
@@ -178,13 +176,13 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbzzE-7vzgpz0FhfMvJ6TX
 const KEY = ["A","C","C","B","B","D","A","B","A","E","D","D","B","B","A","A","B","B","C","D","E","B","C","C","C","C","E","C","D","B","D","E","A","E","A","D","E","E","E","E","A","C","C","B","D","C","A","B","B","E","A","D","A","D","E","A","D"];
 const CHOICES = ["A","B","C","D","E"];
 const TOTAL_Q = 57;
-const WRITTEN_MAX = 11;
+const WRITTEN_MAX = 0;   // written section removed; all 57 are multiple choice
 const SECTIONS = [
-  {name:"A — Foundations",       from:1,  to:17},
-  {name:"B — Logic & Text",      from:18, to:33},
-  {name:"C — Structures & Flow", from:34, to:46},
-  {name:"D — Code Doctor",       from:47, to:51},
-  {name:"E — Footprint & MFA",   from:52, to:57},
+  {name:"A — Foundations",           from:1,  to:12},
+  {name:"B — Logic & Text",          from:13, to:28},
+  {name:"C — Structures & Flow",     from:29, to:46},
+  {name:"D — Code Doctor",           from:47, to:51},
+  {name:"E — Footprint & MFA",       from:52, to:57},
 ];
 /* Geometry: fractions of the box formed by the four MARKER CENTRES.
    MUST match the printed sheet exactly. */
@@ -883,8 +881,7 @@ function buildReview(){
 $('confirmBtn').onclick = ()=>{
   const name=$('student').value.trim();
   if(!name){ alert('Type the student name first.'); $('student').focus(); return; }
-  const wv=parseInt($('written').value,10);
-  const written=isNaN(wv)?0:Math.max(0,Math.min(WRITTEN_MAX,wv));
+  const written = 0;   // no written section: all 57 questions are multiple choice
 
   let mc=0; const wrong=[];
   for(let q=1;q<=TOTAL_Q;q++){
@@ -905,7 +902,7 @@ $('confirmBtn').onclick = ()=>{
     answers:answers.map(a=>a>=0?CHOICES[a]:"-").join(""), when:new Date().toISOString()};
 
   $('big').textContent=total;
-  $('sub').textContent='out of '+max+'  ·  '+mc+'/'+TOTAL_Q+' multiple choice + '+written+'/'+WRITTEN_MAX+' written';
+  $('sub').textContent = 'out of ' + max + ' marks';
   $('fill').style.width=pct+'%';
   $('fill').style.background = pct>=60?'var(--ok)':(pct>=45?'var(--warn)':'var(--bad)');
   $('pct').textContent=pct+'%  ·  '+grade(pct);
@@ -948,7 +945,7 @@ $('save').onclick = async ()=>{
 };
 
 $('next').onclick = ()=>{
-  $('student').value=''; $('written').value='';
+  $('student').value='';
   answers=[]; detected=[]; lastResult=null;
   $('reviewCard').classList.add('hidden');
   $('resultCard').classList.add('hidden');
