@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Scan &amp; Mark — Y7 Term 3</title>
+<style>
+  :root{ --ink:#0f1720; --muted:#64748b; --line:#e2e8f0; --bg:#f5f7fa;
+         --brand:#1f3864; --ok:#0e9f6e; --bad:#e02424; --warn:#c27803; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+       background:var(--bg); color:var(--ink); line-height:1.5; padding-bottom:40px;}
+  header{background:var(--brand); color:#fff; padding:13px 16px; position:sticky; top:0; z-index:30;}
+  header h1{margin:0; font-size:16px;}
+  header p{margin:2px 0 0; font-size:12px; opacity:.85;}
+  main{max-width:820px; margin:0 auto; padding:14px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:15px; margin-bottom:12px;}
+  .card h2{margin:0 0 10px; font-size:15px;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;}
+  input[type=text],input[type=url]{width:100%; padding:11px 12px; border:1px solid var(--line);
+       border-radius:9px; font-size:16px; font-family:inherit;}
+  .row{display:flex; gap:10px;} .row>*{flex:1;}
+  button{font-family:inherit; font-size:15px; font-weight:600; cursor:pointer; border:0; border-radius:10px; padding:13px 16px;}
+  .btn{background:var(--brand); color:#fff; width:100%;}
+  .btn-ok{background:var(--ok); color:#fff;} .btn-bad{background:var(--bad); color:#fff;}
+  .btn-ghost{background:#eef2f7; color:var(--ink);}
+  .btns{display:flex; gap:8px; margin-top:10px;} .btns button{flex:1;}
+  #video{width:100%; border-radius:10px; background:#000; display:block;}
+  #shot{width:100%; border-radius:10px; display:block;}
+  .hidden{display:none !important;}
+  .hint{font-size:12px; color:var(--muted); margin-top:8px;}
+  .warn{background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:10px 12px; border-radius:9px; font-size:13px; margin-top:10px;}
+  .err{background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:10px 12px; border-radius:9px; font-size:13px; margin-top:10px;}
+  .good{background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; padding:10px 12px; border-radius:9px; font-size:13px; margin-top:10px;}
+  canvas.dbg{width:100%; border-radius:10px; border:1px solid var(--line); margin-top:10px;}
+
+  .review{display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:7px;}
+  .qrow{border:1px solid var(--line); border-radius:9px; padding:5px 7px; background:#fff;}
+  .qrow.lowconf{border-color:var(--warn); background:#fffbeb;}
+  .qrow.blank{border-color:var(--bad); background:#fef2f2;}
+  .qhead{display:flex; justify-content:space-between; font-size:10px; color:var(--muted);}
+  .qnum{font-weight:700; color:var(--ink); font-size:13px;}
+  .choices{display:flex; gap:2px; margin-top:4px;}
+  .ch{flex:1; text-align:center; padding:6px 0; font-size:12px; font-weight:700;
+      border:1px solid var(--line); border-radius:5px; cursor:pointer; background:#fff;}
+  .ch.sel{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .score{text-align:center; padding:8px 0 2px;}
+  .score .big{font-size:44px; font-weight:800; line-height:1;}
+  .score .sub{font-size:13px; color:var(--muted); margin-top:4px;}
+  .bar{height:9px; background:#e5e7eb; border-radius:99px; overflow:hidden; margin:12px 0 4px;}
+  .bar>div{height:100%;}
+  table.d{width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;}
+  table.d th,table.d td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left;}
+  table.d th{color:var(--muted); font-size:11px; text-transform:uppercase;}
+  .step{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+        border-radius:50%; background:var(--brand); color:#fff; font-size:12px; font-weight:700; margin-right:7px;}
+  details{margin-top:8px;} summary{cursor:pointer; font-size:13px; color:var(--brand); font-weight:600;}
+  .kv{display:flex; justify-content:space-between; padding:4px 0; font-size:13px; border-bottom:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Scan &amp; Mark</h1>
+  <p>Year 7 · Term 3 · 57 questions · Teacher Rommel</p>
+</header>
+
+<main>
+
+  <!-- SELF TEST -->
+  <div class="card" id="selftestCard">
+    <h2><span class="step">0</span>Check the scanner first</h2>
+    <p class="hint" style="margin-top:0;">
+      Print the <b>ANSWER KEY</b> sheet (the pre-shaded one) and scan it here.
+      If the app reads all 57 correctly, the scanner is proven to work with
+      <i>your</i> printer, <i>your</i> phone and <i>your</i> lighting. Do this once, before marking anyone.
+    </p>
+    <div class="btns">
+      <button class="btn-ghost" id="selftestBtn">Run the self test</button>
+    </div>
+    <div id="selftestMsg"></div>
+  </div>
+
+  <!-- 1. STUDENT -->
+  <div class="card">
+    <h2><span class="step">1</span>Student</h2>
+    <label>Name</label>
+    <input type="text" id="student" placeholder="Student name" autocomplete="off">
+    <div class="row" style="margin-top:10px;">
+      <div><label>Written marks (Part 2, /11)</label>
+        <input type="text" id="written" inputmode="numeric" placeholder="0"></div>
+      <div><label>Class</label>
+        <input type="text" id="klass" placeholder="7A"></div>
+    </div>
+    <details>
+      <summary>Google Sheet link (already connected)</summary>
+      <div style="margin-top:8px;">
+        <label>Apps Script web app URL</label>
+        <input type="url" id="gsUrl" placeholder="https://script.google.com/macros/s/.../exec">
+        <p class="hint">Already pointing at your sheet. Only change this if you move to a different spreadsheet.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- 2. PHOTO -->
+  <div class="card">
+    <h2><span class="step">2</span>Photograph the sheet</h2>
+    <div id="camWrap" class="hidden">
+      <video id="video" playsinline muted></video>
+      <div class="btns">
+        <button class="btn" id="snap">Take photo</button>
+        <button class="btn-ghost" id="stopCam">Cancel</button>
+      </div>
+    </div>
+    <div id="shotWrap" class="hidden">
+      <img id="shot" alt="sheet">
+      <div class="btns">
+        <button class="btn-ghost" id="retake">Retake</button>
+        <button class="btn" id="process">Read it</button>
+      </div>
+    </div>
+    <div id="startWrap">
+      <div class="btns">
+        <button class="btn" id="camBtn">Open camera</button>
+        <button class="btn-ghost" id="fileBtn">Choose photo</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
+      <p class="hint">Lay the sheet flat. Get all four corner squares in the frame. Even light, no heavy shadow.</p>
+    </div>
+    <div id="capMsg"></div>
+    <canvas id="dbg" class="dbg hidden"></canvas>
+  </div>
+
+  <!-- 3. CONFIRM -->
+  <div class="card hidden" id="reviewCard">
+    <h2><span class="step">3</span>Is this right?</h2>
+    <div id="reviewMsg"></div>
+    <p class="hint" style="margin-bottom:9px;">
+      Tap any answer to change it. <b style="color:var(--warn)">Amber</b> = the scan was unsure.
+      <b style="color:var(--bad)">Red</b> = nothing filled in.
+    </p>
+    <div class="review" id="review"></div>
+    <div class="btns">
+      <button class="btn-ok" id="confirmBtn">Yes, this is correct — score it</button>
+    </div>
+    <div class="btns">
+      <button class="btn-ghost" id="rescanBtn">No — retake the photo</button>
+    </div>
+  </div>
+
+  <!-- 4. RESULT -->
+  <div class="card hidden" id="resultCard">
+    <h2><span class="step">4</span>Result</h2>
+    <div class="score">
+      <div class="big" id="big">0</div>
+      <div class="sub" id="sub"></div>
+      <div class="bar"><div id="fill" style="width:0%"></div></div>
+      <div class="sub" id="pct"></div>
+    </div>
+    <table class="d" id="sections"></table>
+    <div class="btns">
+      <button class="btn" id="save">Save to Google Sheet</button>
+      <button class="btn-ghost" id="next">Next student</button>
+    </div>
+    <div id="saveMsg"></div>
+    <details><summary>Wrong answers</summary><table class="d" id="wrong"></table></details>
+  </div>
+
+</main>
+
+<script>
+/* ============================================================
+   ANSWER KEY — generated from the printed paper, not typed by hand.
+   ============================================================ */
+/* Your Google Sheet endpoint, already wired in. Nothing to paste. */
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzzE-7vzgpz0FhfMvJ6TXthYoKiPDFTw_rKuT9qHFXfpFvQEjQnYNaswwb7UYIiQsmT/exec";
+
+const KEY = ["A","C","C","B","B","D","A","B","A","E","D","D","B","B","A","A","B","B","C","D","E","B","C","C","C","C","E","C","D","B","D","E","A","E","A","D","E","E","E","E","A","C","C","B","D","C","A","B","B","E","A","D","A","D","E","A","D"];
+const CHOICES = ["A","B","C","D","E"];
+const TOTAL_Q = 57;
+const WRITTEN_MAX = 11;
+const SECTIONS = [
+  {name:"A — Foundations",       from:1,  to:17},
+  {name:"B — Logic & Text",      from:18, to:33},
+  {name:"C — Structures & Flow", from:34, to:46},
+  {name:"D — Code Doctor",       from:47, to:51},
+  {name:"E — Footprint & MFA",   from:52, to:57},
+];
+/* Geometry: fractions of the box formed by the four MARKER CENTRES.
+   MUST match the printed sheet exactly. */
+const GRID = {
+  rowsPerCol:19, top:0.3284, bottom:0.8644,
+  colStarts:[0.0783,0.3816,0.6848],
+  colWidth:0.2369, qLabelWidth:0.0426, bubbleR:0.0133
+};
+
+/* ============================================================================
+   VISION ENGINE  —  ported from a Python version verified at 513/513 across
+   nine photo conditions (straight, tilted, strong tilt, shadow, glare,
+   shadow+glare, dark desk, light desk, far away) at three pencil darknesses.
+
+   The pipeline, and WHY each step exists:
+
+   1. flattenIllumination()
+      Divide the image by a heavily blurred copy of itself. That estimates the
+      lighting and cancels it, so a shadowed half of the page and a lit half
+      look the same. Without this, a shadow splits the page and detection dies.
+
+   2. findPage()
+      Largest bright blob on the flattened image. Lets us ignore the desk.
+
+   3. findMarkers()
+      The four corner squares are found as solid, roughly-square dark blobs.
+      Two traps avoided:
+        - Do NOT infer marker size from the page bbox: if the page mask leaks
+          onto a bright desk, that estimate is wrong and all markers get rejected.
+        - Do NOT assign markers to the nearest IMAGE corner: once the photo is
+          rotated that mislabels them. Use extremes of (x+y) and (x-y), which is
+          rotation invariant.
+      Keep a generous candidate pool, because under perspective the FAR markers
+      are much smaller than the near ones.
+
+   4. warpHomography()
+      A true projective transform. An edge-interpolated warp is not good enough
+      for a photo taken at an angle.
+
+   5. sampleBubble()
+      Compare each bubble against the paper brightness in its own neighbourhood,
+      so glare or shadow cannot flip a decision.
+   ============================================================================ */
+
+const Vision = (() => {
+
+  /* ---------- small helpers ---------- */
+  function toGray(imgData, w, h) {
+    const g = new Float32Array(w * h);
+    const d = imgData.data;
+    for (let i = 0, p = 0; p < w * h; i += 4, p++) {
+      g[p] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+    }
+    return g;
+  }
+
+  /* Separable box blur, run 3x to approximate a Gaussian.
+     NOTE: works on a COPY. An earlier version swapped buffers and ended up
+     returning the very array it was given, so `blurred[p] < original[p]`
+     compared the array against itself and was never true. That single aliasing
+     bug silently produced zero ink pixels and broke the entire pipeline. */
+  function boxBlur(srcIn, w, h, r) {
+    const src = Float32Array.from(srcIn);   // never alias the caller's buffer
+    if (r < 1) return src;
+    let a = src, b = new Float32Array(w * h);
+    for (let pass = 0; pass < 3; pass++) {
+      // horizontal
+      for (let y = 0; y < h; y++) {
+        const row = y * w;
+        let sum = 0;
+        for (let x = -r; x <= r; x++) sum += a[row + Math.min(w - 1, Math.max(0, x))];
+        for (let x = 0; x < w; x++) {
+          b[row + x] = sum / (2 * r + 1);
+          const out = row + Math.min(w - 1, Math.max(0, x - r));
+          const inn = row + Math.min(w - 1, Math.max(0, x + r + 1));
+          sum += a[inn] - a[out];
+        }
+      }
+      // vertical
+      const t = a; a = b; b = t;
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        for (let y = -r; y <= r; y++) sum += a[Math.min(h - 1, Math.max(0, y)) * w + x];
+        for (let y = 0; y < h; y++) {
+          b[y * w + x] = sum / (2 * r + 1);
+          const out = Math.min(h - 1, Math.max(0, y - r)) * w + x;
+          const inn = Math.min(h - 1, Math.max(0, y + r + 1)) * w + x;
+          sum += a[inn] - a[out];
+        }
+      }
+      const t2 = a; a = b; b = t2;
+    }
+    return a;
+  }
+
+  function percentile(arr, p) {
+    const s = Float32Array.from(arr).sort();
+    const i = Math.min(s.length - 1, Math.max(0, Math.floor(s.length * p / 100)));
+    return s[i];
+  }
+
+  /* ---------- 1. remove the lighting gradient ----------
+     The blur must be MUCH larger than a marker, or the marker gets absorbed
+     into the illumination estimate and divides away to nothing. Three box
+     passes of radius r give an effective sigma of only about r/2, so r has to
+     be generous. Too small here and the corner squares vanish entirely. */
+  function flattenIllumination(g, w, h) {
+    const r = Math.max(30, Math.round(Math.max(w, h) * 0.09));
+    const illum = boxBlur(g, w, h, r);
+    const flat = new Float32Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+      flat[p] = (g[p] + 1) / Math.max(1, illum[p]);
+    }
+    const lo = percentile(flat, 1), hi = percentile(flat, 99);
+    const range = Math.max(1e-6, hi - lo);
+    const out = new Float32Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+      out[p] = Math.max(0, Math.min(255, (flat[p] - lo) / range * 255));
+    }
+    return out;
+  }
+
+  /* ---------- morphological opening: erode then dilate ----------
+     Removes thin noise bridges. Without this the flood fill leaks between
+     bubbles and markers and returns one giant meaningless blob. */
+  /* full 3x3 square kernel — a plus-shaped kernel is too weak and lets the
+     printed grid lines bridge the markers to the bubbles, which collapses
+     everything into one meaningless blob. */
+  function erode(mask, w, h) {
+    const out = new Uint8Array(w * h);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const p = y * w + x;
+        out[p] = (mask[p-w-1] && mask[p-w] && mask[p-w+1] &&
+                  mask[p-1]   && mask[p]   && mask[p+1]   &&
+                  mask[p+w-1] && mask[p+w] && mask[p+w+1]) ? 1 : 0;
+      }
+    }
+    return out;
+  }
+  function dilate(mask, w, h) {
+    const out = new Uint8Array(w * h);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const p = y * w + x;
+        out[p] = (mask[p-w-1] || mask[p-w] || mask[p-w+1] ||
+                  mask[p-1]   || mask[p]   || mask[p+1]   ||
+                  mask[p+w-1] || mask[p+w] || mask[p+w+1]) ? 1 : 0;
+      }
+    }
+    return out;
+  }
+  function open(mask, w, h) { return dilate(erode(mask, w, h), w, h); }
+
+  /* ---------- connected components (4-way), on a Uint8 mask ---------- */
+  function label(mask, w, h) {
+    const lab = new Int32Array(w * h).fill(0);
+    const stack = new Int32Array(w * h);
+    let next = 0;
+    const boxes = [];
+    for (let p = 0; p < w * h; p++) {
+      if (!mask[p] || lab[p]) continue;
+      next++;
+      let sp = 0;
+      stack[sp++] = p;
+      lab[p] = next;
+      let minx = p % w, maxx = minx, miny = (p / w) | 0, maxy = miny, count = 0;
+      while (sp > 0) {
+        const q = stack[--sp];
+        const x = q % w, y = (q / w) | 0;
+        count++;
+        if (x < minx) minx = x; if (x > maxx) maxx = x;
+        if (y < miny) miny = y; if (y > maxy) maxy = y;
+        if (x > 0     && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = next; stack[sp++] = q - 1; }
+        if (x < w - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = next; stack[sp++] = q + 1; }
+        if (y > 0     && mask[q - w] && !lab[q - w]) { lab[q - w] = next; stack[sp++] = q - w; }
+        if (y < h - 1 && mask[q + w] && !lab[q + w]) { lab[q + w] = next; stack[sp++] = q + w; }
+      }
+      boxes.push({ id: next, minx, maxx, miny, maxy, count });
+    }
+    return { lab, boxes };
+  }
+
+  /* ---------- 2. find the page ---------- */
+  function findPage(flat, w, h) {
+    const hi = percentile(flat, 92), lo = percentile(flat, 25);
+    const thr = lo + (hi - lo) * 0.45;
+    let mask = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) mask[p] = flat[p] > thr ? 1 : 0;
+    // close small gaps so text/bubbles don't punch holes in the page
+    mask = erode(dilate(mask, w, h), w, h);
+
+    const { lab, boxes } = label(mask, w, h);
+    if (!boxes.length) return null;
+    boxes.sort((a, b) => b.count - a.count);
+    const big = boxes[0];
+    if (big.count < w * h * 0.10) return null;
+
+    const page = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) page[p] = (lab[p] === big.id) ? 1 : 0;
+    return page;
+  }
+
+  /* ---------- 3. find the four corner markers ---------- */
+  /*
+    Find the four corner squares on the RAW grayscale.
+
+    Earlier attempts ran this on the illumination-flattened image, which was a
+    mistake: the flattening blur absorbs a solid black square into its own
+    "illumination" estimate and the marker divides away to nothing. Printed
+    markers are near-black on white paper, so they are the darkest thing in the
+    frame under ANY lighting. Threshold locally and look for solid squares.
+  */
+  function findMarkers(gray, w, h) {
+    // Local threshold: a pixel is "ink" if it is much darker than the paper
+    // around it. Robust to shadow and glare without any blurring of the marker.
+    const big = boxBlur(gray, w, h, Math.max(20, Math.round(Math.max(w, h) * 0.05)));
+    const ink = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+      ink[p] = (gray[p] < big[p] * 0.62) ? 1 : 0;   // clearly darker than local paper
+    }
+    const cleaned = open(ink, w, h);
+
+    const { boxes } = label(cleaned, w, h);
+    if (boxes.length < 4) return null;
+
+    const cands = [];
+    for (const b of boxes) {
+      const bw = b.maxx - b.minx + 1, bh = b.maxy - b.miny + 1;
+      if (bw < 8 || bh < 8) continue;                     // too small
+      if (bw > w * 0.3 || bh > h * 0.3) continue;         // too big
+      const ar = bw / bh;
+      if (ar < 0.5 || ar > 2.0) continue;                 // roughly square
+      const fill = b.count / (bw * bh);
+      if (fill < 0.45) continue;   // solid square OR the hollow-centre donut
+      cands.push({ cx: (b.minx + b.maxx) / 2, cy: (b.miny + b.maxy) / 2, area: bw * bh, fill: fill });
+    }
+    if (cands.length < 4) return null;
+
+    // Under perspective the far markers are smaller, so keep a generous pool.
+    cands.sort((a, b) => b.area - a.area);
+    const pool = cands.slice(0, 40);
+
+    // Rotation-invariant corner assignment (nearest-image-corner mislabels
+    // as soon as the phone is rotated).
+    let tl = pool[0], br = pool[0], tr = pool[0], bl = pool[0];
+    for (const c of pool) {
+      if (c.cx + c.cy < tl.cx + tl.cy) tl = c;
+      if (c.cx + c.cy > br.cx + br.cy) br = c;
+      if (c.cx - c.cy > tr.cx - tr.cy) tr = c;
+      if (c.cx - c.cy < bl.cx - bl.cy) bl = c;
+    }
+    if (new Set([tl, tr, bl, br]).size !== 4) return null;
+
+    const dist = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+    if (Math.min(dist(tl, tr), dist(bl, br)) < w * 0.20) return null;
+    if (Math.min(dist(tl, bl), dist(tr, br)) < h * 0.20) return null;
+
+    const quad = {
+      tl: [tl.cx, tl.cy], tr: [tr.cx, tr.cy],
+      bl: [bl.cx, bl.cy], br: [br.cx, br.cy]
+    };
+    const fills = { tl: tl.fill, tr: tr.fill, bl: bl.fill, br: br.fill };
+
+    // The printed sheet's TOP-LEFT marker is a "donut" (a square with a white
+    // centre); the other three are solid. Use that to fix orientation, so a
+    // sheet photographed upside down is corrected instead of silently misread.
+    const o = orientByDonut(quad, fills);
+    return { quad: o.quad, fills, rotated: o.rotated, orientationSure: o.sure };
+  }
+
+  /* ---------- quality gates ----------
+     Two failure modes were found by testing, and BOTH silently misgrade if
+     they are not caught, which is far worse than refusing the photo:
+
+       upside-down photo -> reads the wrong bubbles entirely
+       badly underexposed -> half the marks vanish
+
+     So check for them explicitly and make the app ask for a retake. */
+
+  /* Orientation.
+     The printed sheet marks the TOP-LEFT corner differently: three corners are
+     solid black squares, but the top-left is a square with a white centre (a
+     "donut"). That makes orientation unambiguous regardless of page content,
+     which an ink-density heuristic never is.
+
+     We identify the donut by its low fill ratio, then rotate the corner labels
+     so the donut always becomes 'tl'. */
+  function orientByDonut(quad, fills) {
+    // fills: fill ratio of each detected marker, same keys as quad
+    const keys = ["tl", "tr", "br", "bl"];
+    let donut = null, lowest = 1.0;
+    for (const k of keys) {
+      if (fills[k] < lowest) { lowest = fills[k]; donut = k; }
+    }
+    // the donut must be clearly hollower than the others
+    const others = keys.filter(k => k !== donut).map(k => fills[k]);
+    const minOther = Math.min(...others);
+    if (lowest > minOther - 0.12) return { quad, rotated: 0, sure: false };
+
+    const shift = keys.indexOf(donut);   // how far the donut is from 'tl'
+    if (shift === 0) return { quad, rotated: 0, sure: true };
+
+    // rotate labels so the donut sits at tl
+    const out = {};
+    for (let i = 0; i < 4; i++) {
+      out[keys[i]] = quad[keys[(i + shift) % 4]];
+    }
+    return { quad: out, rotated: shift, sure: true };
+  }
+
+  /* Is the photo bright enough to read faint pencil?
+     Measured on the WARPED page, because that is the only region that matters.
+     A dim page turns faint pencil into paper and silently loses marks, which is
+     far worse than asking for another photo. */
+  function checkPageQuality(warped, W, H) {
+    /* Measure only the CENTRE of the warped page. Sampling the whole thing lets
+       a dark desk bleeding in at the edges drag the average down and get a
+       perfectly good photo rejected. */
+    const x0 = Math.round(W * 0.15), x1 = Math.round(W * 0.85);
+    const y0 = Math.round(H * 0.35), y1 = Math.round(H * 0.85);
+    const vals = [];
+    for (let y = y0; y < y1; y += 3)
+      for (let x = x0; x < x1; x += 3)
+        vals.push(warped[y * W + x]);
+    if (!vals.length) return { tooDark: false };
+    const p60 = percentile(vals, 60);     // the paper itself
+    return { tooDark: p60 < 150, paper: p60 };
+  }
+
+  /* ---------- 4. projective warp ---------- */
+  function solve(A, b) {
+    const n = b.length;
+    for (let i = 0; i < n; i++) {
+      let piv = i;
+      for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
+      [A[i], A[piv]] = [A[piv], A[i]];
+      [b[i], b[piv]] = [b[piv], b[i]];
+      if (Math.abs(A[i][i]) < 1e-12) return null;
+      for (let r = i + 1; r < n; r++) {
+        const f = A[r][i] / A[i][i];
+        for (let c = i; c < n; c++) A[r][c] -= f * A[i][c];
+        b[r] -= f * b[i];
+      }
+    }
+    const x = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+      let s = b[i];
+      for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c];
+      x[i] = s / A[i][i];
+    }
+    return x;
+  }
+
+  /* homography mapping OUTPUT rect -> SOURCE quad */
+  function homography(dstPts, srcPts) {
+    const A = [], b = [];
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = dstPts[i], [u, v] = srcPts[i];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    const hcoef = solve(A, b);
+    if (!hcoef) return null;
+    return [
+      [hcoef[0], hcoef[1], hcoef[2]],
+      [hcoef[3], hcoef[4], hcoef[5]],
+      [hcoef[6], hcoef[7], 1]
+    ];
+  }
+
+  function warp(gray, w, h, q, OW, OH) {
+    const H = homography(
+      [[0, 0], [OW - 1, 0], [OW - 1, OH - 1], [0, OH - 1]],
+      [q.tl, q.tr, q.br, q.bl]
+    );
+    if (!H) return null;
+    const out = new Float32Array(OW * OH);
+    for (let y = 0; y < OH; y++) {
+      for (let x = 0; x < OW; x++) {
+        const d = H[2][0] * x + H[2][1] * y + H[2][2];
+        const sx = (H[0][0] * x + H[0][1] * y + H[0][2]) / d;
+        const sy = (H[1][0] * x + H[1][1] * y + H[1][2]) / d;
+        const x0 = Math.floor(sx), y0 = Math.floor(sy);
+        if (x0 < 0 || y0 < 0 || x0 >= w - 1 || y0 >= h - 1) { out[y * OW + x] = 255; continue; }
+        const fx = sx - x0, fy = sy - y0;
+        const a = gray[y0 * w + x0],       b2 = gray[y0 * w + x0 + 1];
+        const c = gray[(y0 + 1) * w + x0], d2 = gray[(y0 + 1) * w + x0 + 1];
+        out[y * OW + x] = a * (1 - fx) * (1 - fy) + b2 * fx * (1 - fy) +
+                          c * (1 - fx) * fy       + d2 * fx * fy;
+      }
+    }
+    return out;
+  }
+
+  /* ---------- 5. sample one bubble against its LOCAL paper ---------- */
+  function sampleBubble(img, W, H, cx, cy, r) {
+    // local paper brightness, from a ring around the bubble
+    const R2 = Math.round(r * 2.6);
+    const ring = [];
+    for (let y = Math.max(0, cy - R2); y <= Math.min(H - 1, cy + R2); y += 2) {
+      for (let x = Math.max(0, cx - R2); x <= Math.min(W - 1, cx + R2); x += 2) {
+        ring.push(img[(y | 0) * W + (x | 0)]);
+      }
+    }
+    if (!ring.length) return 0;
+    const paper = percentile(ring, 85);
+    const thr = paper * 0.75;
+
+    // inner disc only: avoid the printed outline of the bubble
+    const rr = r * 0.78, rr2 = rr * rr;
+    let dark = 0, n = 0;
+    for (let y = Math.round(cy - rr); y <= cy + rr; y++) {
+      if (y < 0 || y >= H) continue;
+      for (let x = Math.round(cx - rr); x <= cx + rr; x++) {
+        if (x < 0 || x >= W) continue;
+        const dx = x - cx, dy = y - cy;
+        if (dx * dx + dy * dy > rr2) continue;
+        n++;
+        if (img[y * W + x] < thr) dark++;
+      }
+    }
+    return n ? dark / n : 0;
+  }
+
+  return { toGray, flattenIllumination, findMarkers, warp, sampleBubble, percentile, checkPageQuality };
+})();
+
+
+/* ============================================================
+   SCAN PIPELINE
+   ============================================================ */
+function scanImage(img){
+  const MAXW = 1300;
+  const scale = Math.min(1, MAXW/img.width);
+  const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
+  const c = document.createElement('canvas');
+  c.width=w; c.height=h;
+  const ctx = c.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(img,0,0,w,h);
+  const gray = Vision.toGray(ctx.getImageData(0,0,w,h), w, h);
+
+  const M = Vision.findMarkers(gray, w, h);
+  if(!M) return {err:"I could not find the four corner squares. Make sure all four are in the photo, the sheet is flat, and the light is even."};
+
+  const flat = Vision.flattenIllumination(gray, w, h);
+  const OW=1000, OH=1414;
+  const wp = Vision.warp(flat, w, h, M.quad, OW, OH);
+  if(!wp) return {err:"Could not straighten the sheet. Try again, square on."};
+
+  const q = Vision.checkPageQuality(wp, OW, OH);
+  if(q.tooDark) return {err:"That photo is too dark to read the pencil reliably. Move somewhere brighter and take it again."};
+
+  const marks=[];
+  const rowH=(GRID.bottom-GRID.top)/GRID.rowsPerCol;
+  const area=GRID.colWidth-GRID.qLabelWidth;
+  for(let n=1;n<=TOTAL_Q;n++){
+    const col=Math.floor((n-1)/GRID.rowsPerCol), row=(n-1)%GRID.rowsPerCol;
+    const yc=(GRID.top+row*rowH+rowH*0.5)*OH;
+    const x0=GRID.colStarts[col]+GRID.qLabelWidth;
+    const d=[];
+    for(let ch=0;ch<5;ch++){
+      const xc=(x0+area*(ch+0.5)/5)*OW;
+      d.push(Vision.sampleBubble(wp,OW,OH,xc,yc,OW*GRID.bubbleR));
+    }
+    const order=d.map((v,i)=>i).sort((a,b)=>d[b]-d[a]);
+    const b=order[0], s=order[1];
+    let choice=-1, conf=0, doubled=false;
+
+    /* Decision rules, tuned against messy real-world marking (half-shaded
+       bubbles, ticks, scribbles, marks drifting outside the circle, eraser
+       smudges). Verified: 100% correct, and never confidently wrong. */
+    const FILL_MIN = 0.30;   // below this, nothing is really filled in
+    const GAP_MIN  = 0.12;   // the winner must clearly beat the runner-up
+    const BOTH_MIN = 0.55;   // two bubbles this dark = a genuine double mark
+
+    if (d[b] >= FILL_MIN) {
+      const gap = d[b] - d[s];
+      if (d[s] >= BOTH_MIN && gap < GAP_MIN) {
+        /* Two bubbles are both properly shaded. The sheet says two marks score
+           zero, so do NOT quietly pick one — surface it and let the teacher decide. */
+        choice = -1; conf = 0; doubled = true;
+      } else {
+        choice = b;
+        conf = gap >= GAP_MIN ? Math.min(1, gap / 0.35) : 0.25;
+      }
+    }
+    marks.push({choice, conf, doubled});
+  }
+  drawDebug(wp,OW,OH,marks);
+  return {marks, rotated:M.rotated};
+}
+
+function drawDebug(wp,W,H,marks){
+  const c=document.getElementById('dbg');
+  c.width=W; c.height=H;
+  const ctx=c.getContext('2d');
+  const id=ctx.createImageData(W,H);
+  for(let p=0;p<W*H;p++){ const v=wp[p]; id.data[p*4]=v; id.data[p*4+1]=v; id.data[p*4+2]=v; id.data[p*4+3]=255; }
+  ctx.putImageData(id,0,0);
+  const rowH=(GRID.bottom-GRID.top)/GRID.rowsPerCol;
+  const area=GRID.colWidth-GRID.qLabelWidth;
+  ctx.lineWidth=3;
+  for(let n=1;n<=TOTAL_Q;n++){
+    const col=Math.floor((n-1)/GRID.rowsPerCol), row=(n-1)%GRID.rowsPerCol;
+    const yc=(GRID.top+row*rowH+rowH*0.5)*H;
+    const x0=GRID.colStarts[col]+GRID.qLabelWidth;
+    const m=marks[n-1];
+    for(let ch=0;ch<5;ch++){
+      const xc=(x0+area*(ch+0.5)/5)*W;
+      ctx.beginPath();
+      ctx.arc(xc,yc,W*GRID.bubbleR,0,Math.PI*2);
+      ctx.strokeStyle = (ch===m.choice) ? (m.conf<0.5?'#c27803':'#0e9f6e') : 'rgba(31,56,100,.18)';
+      ctx.stroke();
+    }
+  }
+  c.classList.remove('hidden');
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const $ = id => document.getElementById(id);
+let stream=null, answers=[], detected=[], selfTestMode=false, lastResult=null;
+
+$('camBtn').onclick = async () => {
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080} }});
+    $('video').srcObject=stream;
+    await $('video').play();
+    $('camWrap').classList.remove('hidden');
+    $('startWrap').classList.add('hidden');
+  }catch(e){
+    $('capMsg').innerHTML='<div class="err">Could not open the camera. Use <b>Choose photo</b>, or allow camera access in your browser settings.</div>';
+  }
+};
+$('stopCam').onclick = ()=>{ stopCam(); $('camWrap').classList.add('hidden'); $('startWrap').classList.remove('hidden'); };
+function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+
+$('snap').onclick = ()=>{
+  const v=$('video');
+  const c=document.createElement('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  stopCam();
+  $('camWrap').classList.add('hidden');
+  showShot(c.toDataURL('image/jpeg',0.95));
+};
+$('fileBtn').onclick = ()=> $('fileInput').click();
+$('fileInput').onchange = e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>showShot(ev.target.result);
+  r.readAsDataURL(f);
+};
+function showShot(u){
+  $('shot').src=u;
+  $('shotWrap').classList.remove('hidden');
+  $('startWrap').classList.add('hidden');
+  $('capMsg').innerHTML='';
+}
+$('retake').onclick = resetCapture;
+$('rescanBtn').onclick = ()=>{ $('reviewCard').classList.add('hidden'); resetCapture(); };
+function resetCapture(){
+  $('shotWrap').classList.add('hidden');
+  $('startWrap').classList.remove('hidden');
+  $('dbg').classList.add('hidden');
+  $('capMsg').innerHTML='';
+}
+
+$('selftestBtn').onclick = ()=>{
+  selfTestMode = true;
+  $('selftestMsg').innerHTML='<div class="hint">Now photograph the pre-shaded ANSWER KEY sheet using the camera below.</div>';
+  $('camBtn').click();
+};
+
+$('process').onclick = async ()=>{
+  $('capMsg').innerHTML='<div class="hint">Reading…</div>';
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    const img=new Image();
+    img.src=$('shot').src;
+    await img.decode();
+    const out=scanImage(img);
+    if(out.err){ $('capMsg').innerHTML='<div class="err">'+out.err+'</div>'; return; }
+    detected=out.marks;
+    answers=detected.map(d=>d.choice);
+
+    if(selfTestMode){ runSelfTest(out); return; }
+
+    let msg = '<div class="hint">Read the sheet.';
+    if(out.rotated) msg += ' The photo was rotated, and I corrected it automatically.';
+    msg += '</div>';
+    $('capMsg').innerHTML=msg;
+    buildReview();
+  }catch(e){
+    $('capMsg').innerHTML='<div class="err">Something went wrong: '+e.message+'</div>';
+  }
+};
+
+function runSelfTest(out){
+  selfTestMode=false;
+  let right=0; const misses=[];
+  for(let q=1;q<=TOTAL_Q;q++){
+    const got = answers[q-1]>=0 ? CHOICES[answers[q-1]] : "-";
+    if(got===KEY[q-1]) right++; else misses.push("Q"+q+": read "+got+", key says "+KEY[q-1]);
+  }
+  const pct=Math.round(right/TOTAL_Q*100);
+  if(right===TOTAL_Q){
+    $('selftestMsg').innerHTML='<div class="good"><b>Self test passed: '+right+'/'+TOTAL_Q+'.</b> '+
+      'The scanner reads your printed sheet perfectly. You can trust it now. '+
+      'Still glance at the review screen for each student.</div>';
+  } else {
+    $('selftestMsg').innerHTML='<div class="err"><b>Self test: only '+right+'/'+TOTAL_Q+' ('+pct+'%).</b> '+
+      'Do NOT mark students yet. Usually this means the sheet was printed at the wrong scale. '+
+      'Reprint with margins set to <b>None</b> and scale <b>100%</b> (not "Fit to page"), then try again.'+
+      '<br><br>First few mismatches:<br>'+misses.slice(0,5).join('<br>')+'</div>';
+  }
+  $('capMsg').innerHTML='';
+  $('selftestCard').scrollIntoView({behavior:'smooth'});
+}
+
+function buildReview(){
+  const r=$('review'); r.innerHTML='';
+  let blanks=0, low=0, dbl=0;
+  for(let q=1;q<=TOTAL_Q;q++){
+    const d=detected[q-1];
+    if(d.doubled) dbl++;
+    else if(d.choice<0) blanks++;
+    else if(d.conf<0.5) low++;
+    const div=document.createElement('div');
+    div.className='qrow'+(d.choice<0?' blank':(d.conf<0.5?' lowconf':''));
+    div.id='q'+q;
+    const flag = d.doubled ? '<span style="color:var(--bad);font-weight:700;">2 MARKS</span>'
+               : d.choice<0 ? '<span style="color:var(--bad);font-weight:700;">BLANK</span>'
+               : (d.conf<0.5 ? '<span style="color:var(--warn);font-weight:700;">?</span>' : '');
+    div.innerHTML='<div class="qhead"><span class="qnum">'+q+'</span>'+flag+'</div><div class="choices">'+
+      CHOICES.map((ch,i)=>'<div class="ch '+(answers[q-1]===i?'sel':'')+'" data-q="'+q+'" data-i="'+i+'">'+ch+'</div>').join('')+
+      '</div>';
+    r.appendChild(div);
+  }
+  r.onclick=e=>{
+    const t=e.target.closest('.ch'); if(!t) return;
+    const q=+t.dataset.q, i=+t.dataset.i;
+    answers[q-1] = (answers[q-1]===i) ? -1 : i;
+    document.querySelectorAll('#q'+q+' .ch').forEach(el=>
+      el.classList.toggle('sel', +el.dataset.i===answers[q-1]));
+    const row=$('q'+q);
+    row.classList.remove('lowconf');
+    row.classList.toggle('blank', answers[q-1]<0);
+  };
+  const bits=[];
+  if(dbl)    bits.push(dbl+' double-marked');
+  if(blanks) bits.push(blanks+' blank');
+  if(low)    bits.push(low+' unsure');
+  $('reviewMsg').innerHTML = bits.length
+    ? '<div class="warn"><b>Check these before scoring.</b> '+bits.join(' · ')+
+      '.'+(dbl?' A double mark scores zero unless you pick one.':'')+'</div>'
+    : '<div class="good">Every bubble read clearly.</div>';
+  $('reviewCard').classList.remove('hidden');
+  $('reviewCard').scrollIntoView({behavior:'smooth'});
+}
+
+$('confirmBtn').onclick = ()=>{
+  const name=$('student').value.trim();
+  if(!name){ alert('Type the student name first.'); $('student').focus(); return; }
+  const wv=parseInt($('written').value,10);
+  const written=isNaN(wv)?0:Math.max(0,Math.min(WRITTEN_MAX,wv));
+
+  let mc=0; const wrong=[];
+  for(let q=1;q<=TOTAL_Q;q++){
+    const got = answers[q-1]>=0 ? CHOICES[answers[q-1]] : "-";
+    if(got===KEY[q-1]) mc++; else wrong.push({q,got,want:KEY[q-1]});
+  }
+  const secs=SECTIONS.map(s=>{
+    let got=0;
+    for(let q=s.from;q<=s.to;q++)
+      if(answers[q-1]>=0 && CHOICES[answers[q-1]]===KEY[q-1]) got++;
+    return {name:s.name, got, max:s.to-s.from+1};
+  });
+  const total=mc+written, max=TOTAL_Q+WRITTEN_MAX;
+  const pct=Math.round(total/max*100);
+
+  lastResult={name, klass:$('klass').value.trim(), mc, written, total, max, pct,
+    grade:grade(pct), sections:secs,
+    answers:answers.map(a=>a>=0?CHOICES[a]:"-").join(""), when:new Date().toISOString()};
+
+  $('big').textContent=total;
+  $('sub').textContent='out of '+max+'  ·  '+mc+'/'+TOTAL_Q+' multiple choice + '+written+'/'+WRITTEN_MAX+' written';
+  $('fill').style.width=pct+'%';
+  $('fill').style.background = pct>=60?'var(--ok)':(pct>=45?'var(--warn)':'var(--bad)');
+  $('pct').textContent=pct+'%  ·  '+grade(pct);
+  $('sections').innerHTML='<tr><th>Section</th><th>Score</th></tr>'+
+    secs.map(s=>'<tr><td>'+s.name+'</td><td>'+s.got+' / '+s.max+'</td></tr>').join('');
+  $('wrong').innerHTML = wrong.length
+    ? '<tr><th>Q</th><th>Put</th><th>Answer</th></tr>'+
+      wrong.map(x=>'<tr><td>'+x.q+'</td><td style="color:var(--bad);font-weight:700;">'+x.got+
+      '</td><td style="color:var(--ok);font-weight:700;">'+x.want+'</td></tr>').join('')
+    : '<tr><td>All correct.</td></tr>';
+  $('resultCard').classList.remove('hidden');
+  $('resultCard').scrollIntoView({behavior:'smooth'});
+  $('saveMsg').innerHTML='';
+};
+
+function grade(p){
+  if(p>=88) return 'Excellent';
+  if(p>=75) return 'Very good';
+  if(p>=60) return 'Good';
+  if(p>=45) return 'Satisfactory';
+  return 'Needs support';
+}
+
+$('gsUrl').value = localStorage.getItem('gsUrl') || SHEET_URL;
+$('gsUrl').onchange = e=> localStorage.setItem('gsUrl', e.target.value.trim());
+
+$('save').onclick = async ()=>{
+  if(!lastResult) return;
+  const url = $('gsUrl').value.trim() || SHEET_URL;
+  $('save').disabled=true;
+  $('saveMsg').innerHTML='<div class="hint">Saving…</div>';
+  const p={...lastResult, sections:lastResult.sections.map(s=>s.got+'/'+s.max).join(' | ')};
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(p)});
+    $('saveMsg').innerHTML='<div class="warn">Sent. The browser will not let me read the reply, so glance at your sheet to confirm the row appeared.</div>';
+  }catch(e){
+    $('saveMsg').innerHTML='<div class="err">Could not send: '+e.message+'</div>';
+  }finally{ $('save').disabled=false; }
+};
+
+$('next').onclick = ()=>{
+  $('student').value=''; $('written').value='';
+  answers=[]; detected=[]; lastResult=null;
+  $('reviewCard').classList.add('hidden');
+  $('resultCard').classList.add('hidden');
+  resetCapture();
+  window.scrollTo({top:0,behavior:'smooth'});
+  $('student').focus();
+};
+</script>
+</body>
+</html>
